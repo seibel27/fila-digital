@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fila do Crepe</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center;
+            background: #f4f4f9;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            background: #ff5722;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            background: #ffe0b2;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="loginScreen">
+        <h2>Fila Virtual do Crepe 🥞</h2>
+        <input type="text" id="name" placeholder="Seu Nome" required>
+        <input type="tel" id="phone" placeholder="Seu WhatsApp (apenas números)" required pattern="[0-9]+">
+        <button onclick="joinQueue()">Entrar na Fila</button>
+    </div>
+
+    <div class="container hidden" id="queueScreen">
+        <h2>Sua Fila</h2>
+        <div id="alertBox" class="alert hidden">🔥 Vá para a estação de crepe! Sua vez está chegando.</div>
+        <h1>Posição: <span id="positionText">--</span></h1>
+        <p>Pessoas na sua frente: <span id="aheadText">--</span></p>
+        <button onclick="markServed()" style="background: #4caf50;">Fui Atendido ✓</button>
+    </div>
+
+    <div class="container hidden" id="standbyScreen">
+        <h2>Espero que tenha gostado! 😋</h2>
+        <p>Ainda tem fome?</p>
+        <button onclick="rejoinQueue()">Deseja comer mais? Entrar na fila novamente</button>
+    </div>
+
+    <script>
+        const socket = io("http://localhost:3000"); // Altere para a URL de produção
+
+        // Gerenciamento de Telas
+        const showScreen = (screenId) => {
+            ['loginScreen', 'queueScreen', 'standbyScreen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        };
+
+        // Inicialização
+        window.onload = () => {
+            const savedPhone = localStorage.getItem('crepe_phone');
+            const savedName = localStorage.getItem('crepe_name');
+
+            if (savedPhone && savedName) {
+                // Se já tem dados, entra silenciosamente na fila
+                socket.emit('join_queue', { name: savedName, phone: savedPhone });
+                showScreen('queueScreen');
+            } else {
+                showScreen('loginScreen');
+            }
+        };
+
+        function joinQueue() {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value.replace(/\D/g, ''); // Limpa formatação
+
+            if (!name || phone.length < 10) return alert("Preencha corretamente!");
+
+            localStorage.setItem('crepe_name', name);
+            localStorage.setItem('crepe_phone', phone);
+
+            socket.emit('join_queue', { name, phone });
+            showScreen('queueScreen');
+        }
+
+        function rejoinQueue() {
+            const name = localStorage.getItem('crepe_name');
+            const phone = localStorage.getItem('crepe_phone');
+            socket.emit('join_queue', { name, phone });
+            showScreen('queueScreen');
+        }
+
+        function markServed() {
+            const phone = localStorage.getItem('crepe_phone');
+            socket.emit('mark_served', phone);
+            showScreen('standbyScreen');
+        }
+
+        // Listener de atualização em tempo real
+        socket.on('queue_updated', (queue) => {
+            const myPhone = localStorage.getItem('crepe_phone');
+            if (!myPhone) return;
+
+            const myIndex = queue.findIndex(u => u.phone === myPhone);
+
+            // Se eu não estou na fila, e a tela de fila está ativa, eu fui removido pelo admin
+            if (myIndex === -1 && !document.getElementById('queueScreen').classList.contains('hidden')) {
+                showScreen('standbyScreen');
+                return;
+            }
+
+            if (myIndex !== -1) {
+                const position = myIndex + 1;
+                document.getElementById('positionText').innerText = `${position}º`;
+                document.getElementById('aheadText').innerText = myIndex;
+
+                // Regra de notificação visual
+                const alertBox = document.getElementById('alertBox');
+                if (position <= 3) {
+                    alertBox.classList.remove('hidden');
+                } else {
+                    alertBox.classList.add('hidden');
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

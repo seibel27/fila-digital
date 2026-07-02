@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin - Fila do Crepe</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+        }
+
+        .queue-item {
+            background: #34495e;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #loginScreen {
+            text-align: center;
+            margin-top: 100px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loginScreen">
+        <h2>Acesso Restrito</h2>
+        <input type="password" id="adminPass" placeholder="Senha" style="padding:10px;">
+        <button onclick="loginAdmin()">Acessar</button>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+        <h2>Controle da Fila (<span id="totalCount">0</span> na fila)</h2>
+        <div id="queueList"></div>
+    </div>
+
+    <script>
+        const socket = io("http://localhost:3000"); // Altere para a URL de produção
+        const ADMIN_PASSWORD = "crepe"; // Em produção, validar via JWT/Backend
+
+        function loginAdmin() {
+            if (document.getElementById('adminPass').value === ADMIN_PASSWORD) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                socket.emit('request_queue_sync'); // Pede o estado atual ao conectar
+            } else {
+                alert("Senha incorreta");
+            }
+        }
+
+        socket.on('queue_updated', (queue) => {
+            document.getElementById('totalCount').innerText = queue.length;
+            const list = document.getElementById('queueList');
+            list.innerHTML = ''; // Limpa e refaz (abordagem simples)
+
+            queue.forEach((user, index) => {
+                const isTop3 = index < 3 ? '🔥' : '';
+                list.innerHTML += `
+                <div class="queue-item">
+                    <div>
+                        <strong>${index + 1}º</strong> - ${user.name} ${isTop3}<br>
+                        <small>WhatsApp: ${user.phone}</small>
+                    </div>
+                    <button onclick="forceRemove('${user.phone}')">Marcar como Atendido</button>
+                </div>
+            `;
+            });
+        });
+
+        function forceRemove(phone) {
+            if (confirm("Deseja marcar este cliente como atendido?")) {
+                socket.emit('mark_served', phone); // Reutiliza o evento do servidor
+            }
+        }
+    </script>
+</body>
+
+</html>
