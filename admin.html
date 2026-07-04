@@ -3,38 +3,148 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Fila do Crepe</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --verde: #009739;
+            --verde-escuro: #006B3F;
+            --amarelo: #FEDD00;
+            --azul-fundo: #0b1f33;
+            --azul-card: #14314f;
+            --branco: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
+            font-family: 'Nunito', Arial, sans-serif;
+            background: var(--azul-fundo);
+            color: var(--branco);
+            margin: 0;
+            padding: 20px 16px;
         }
 
-        .queue-item {
-            background: #34495e;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
+        .topo {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
-        button {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+        .topo img {
+            width: 56px;
+            height: 56px;
+        }
+
+        h2 {
+            font-family: 'Passion One', sans-serif;
+            font-size: 1.7rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        h2 .contador {
+            color: var(--amarelo);
         }
 
         #loginScreen {
             text-align: center;
-            margin-top: 100px;
+            max-width: 360px;
+            margin: 60px auto 0;
+            background: var(--azul-card);
+            padding: 28px 22px;
+            border-radius: 16px;
+            border-top: 5px solid var(--amarelo);
+        }
+
+        #loginScreen input {
+            width: 100%;
+            padding: 13px;
+            margin: 12px 0;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        #loginScreen input:focus {
+            outline: none;
+            border-color: var(--amarelo);
+        }
+
+        #loginError {
+            color: #ff8a80;
+            font-weight: 700;
+            margin: 4px 0 0;
+            min-height: 1.2em;
+        }
+
+        button {
+            background: var(--verde);
+            color: var(--branco);
+            border: none;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: var(--verde-escuro);
+        }
+
+        #loginScreen button {
+            width: 100%;
+        }
+
+        #adminPanel {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .queue-item {
+            background: var(--azul-card);
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            border-left: 5px solid transparent;
+        }
+
+        .queue-item.top3 {
+            border-left-color: var(--amarelo);
+            background: #1a3d63;
+        }
+
+        .queue-item .posicao {
+            font-family: 'Passion One', sans-serif;
+            font-size: 1.5rem;
+            color: var(--amarelo);
+        }
+
+        .queue-item small {
+            color: #b0c4d8;
+        }
+
+        .vazio {
+            text-align: center;
+            color: #b0c4d8;
+            font-weight: 700;
+            padding: 30px 0;
         }
     </style>
 </head>
@@ -42,29 +152,46 @@
 <body>
 
     <div id="loginScreen">
-        <h2>Acesso Restrito</h2>
-        <input type="password" id="adminPass" placeholder="Senha" style="padding:10px;">
+        <img src="turma-logo-web.png" alt="Logo da turma" style="width:80px;height:80px;">
+        <h2>Acesso Restrito 🔒</h2>
+        <input type="password" id="adminPass" placeholder="Senha">
         <button onclick="loginAdmin()">Acessar</button>
+        <p id="loginError"></p>
     </div>
 
     <div id="adminPanel" style="display: none;">
-        <h2>Controle da Fila (<span id="totalCount">0</span> na fila)</h2>
+        <div class="topo">
+            <img src="turma-logo-web.png" alt="Logo da turma">
+            <h2>Controle da Fila ⚽ (<span id="totalCount" class="contador">0</span> na fila)</h2>
+        </div>
         <div id="queueList"></div>
     </div>
 
     <script>
         const socket = io(); // Conecta à mesma origem que serviu a página
-        const ADMIN_PASSWORD = "crepe"; // Em produção, validar via JWT/Backend
 
+        // A senha é validada NO SERVIDOR (evento admin_login) — nada de senha no código do cliente
         function loginAdmin() {
-            if (document.getElementById('adminPass').value === ADMIN_PASSWORD) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                socket.emit('request_queue_sync'); // Pede o estado atual ao conectar
-            } else {
-                alert("Senha incorreta");
-            }
+            const pass = document.getElementById('adminPass').value;
+            const errorEl = document.getElementById('loginError');
+            errorEl.innerText = '';
+
+            socket.emit('admin_login', pass, (res) => {
+                if (res && res.success) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    socket.emit('request_queue_sync'); // Pede o estado atual (só respondido para admins)
+                } else {
+                    errorEl.innerText = 'Senha incorreta ⛔';
+                    document.getElementById('adminPass').value = '';
+                }
+            });
         }
+
+        // Enter no campo de senha também envia
+        document.getElementById('adminPass').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loginAdmin();
+        });
 
         // Escapa caracteres HTML para evitar XSS (o nome vem do usuário!)
         function escapeHtml(str) {
@@ -78,17 +205,22 @@
             const list = document.getElementById('queueList');
             list.innerHTML = ''; // Limpa e refaz (abordagem simples)
 
+            if (queue.length === 0) {
+                list.innerHTML = '<p class="vazio">Fila vazia... torcida em silêncio 🦗</p>';
+                return;
+            }
+
             queue.forEach((user, index) => {
-                const isTop3 = index < 3 ? '🔥' : '';
+                const isTop3 = index < 3;
                 const safeName = escapeHtml(user.name);
                 const safePhone = escapeHtml(user.phone);
                 list.innerHTML += `
-                <div class="queue-item">
+                <div class="queue-item ${isTop3 ? 'top3' : ''}">
                     <div>
-                        <strong>${index + 1}º</strong> - ${safeName} ${isTop3}<br>
+                        <span class="posicao">${index + 1}º</span> ${safeName} ${isTop3 ? '🔥' : ''}<br>
                         <small>WhatsApp: ${safePhone}</small>
                     </div>
-                    <button onclick="forceRemove('${safePhone}')">Marcar como Atendido</button>
+                    <button onclick="forceRemove('${safePhone}')">Atendido ✓</button>
                 </div>
             `;
             });

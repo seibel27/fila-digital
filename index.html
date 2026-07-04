@@ -4,42 +4,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fila do Crepe</title>
+    <title>Fila do Crepe ⚽🇧🇷</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --verde: #009739;
+            --verde-escuro: #006B3F;
+            --amarelo: #FEDD00;
+            --amarelo-escuro: #E8C500;
+            --azul: #002776;
+            --branco: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Nunito', -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
             text-align: center;
-            background: #f4f4f9;
-            padding: 20px;
+            background: linear-gradient(165deg, var(--verde) 0%, var(--verde-escuro) 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px 16px 40px;
+            color: var(--azul);
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        header img {
+            width: 120px;
+            height: 120px;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+        }
+
+        header h1 {
+            font-family: 'Passion One', sans-serif;
+            font-size: 2.4rem;
+            letter-spacing: 1px;
+            color: var(--branco);
+            text-shadow: 0 3px 0 rgba(0, 39, 118, 0.35);
+            margin: 8px 0 0;
+            text-transform: uppercase;
+        }
+
+        header .subtitulo {
+            color: var(--amarelo);
+            font-weight: 800;
+            margin: 4px 0 0;
+            font-size: 1rem;
+        }
+
+        .bola {
+            display: inline-block;
+            animation: quicar 2.4s ease-in-out infinite;
+        }
+
+        @keyframes quicar {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-6px);
+            }
         }
 
         .container {
-            max-width: 400px;
+            max-width: 420px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: var(--branco);
+            padding: 24px 20px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Faixa da bandeira no topo do cartão */
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--verde) 33%, var(--amarelo) 33% 66%, var(--azul) 66%);
+        }
+
+        h2 {
+            font-family: 'Passion One', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+            color: var(--azul);
+            margin: 8px 0 12px;
+            text-transform: uppercase;
         }
 
         input,
         button {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
+            padding: 14px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 2px solid #cfd8dc;
             font-size: 16px;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--verde);
+            box-shadow: 0 0 0 3px rgba(0, 151, 57, 0.25);
         }
 
         button {
-            background: #ff5722;
-            color: white;
+            background: var(--amarelo);
+            color: var(--azul);
             border: none;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 17px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             cursor: pointer;
+            box-shadow: 0 4px 0 var(--amarelo-escuro);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 var(--amarelo-escuro);
+        }
+
+        button.verde {
+            background: var(--verde);
+            color: var(--branco);
+            box-shadow: 0 4px 0 var(--verde-escuro);
+        }
+
+        button.verde:active {
+            box-shadow: 0 1px 0 var(--verde-escuro);
         }
 
         .hidden {
@@ -47,53 +158,90 @@
         }
 
         .alert {
-            background: #ffe0b2;
-            color: #e65100;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-weight: bold;
-            animation: pulse 2s infinite;
+            background: linear-gradient(135deg, var(--amarelo), #ffcf00);
+            color: var(--azul);
+            padding: 16px 14px;
+            border-radius: 12px;
+            border: 3px solid var(--azul);
+            margin-bottom: 16px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            animation: convocado 1.4s ease-in-out infinite;
         }
 
-        @keyframes pulse {
-            0% {
+        @keyframes convocado {
+
+            0%,
+            100% {
                 transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(254, 221, 0, 0.7);
             }
 
             50% {
-                transform: scale(1.05);
+                transform: scale(1.04);
+                box-shadow: 0 0 0 12px rgba(254, 221, 0, 0);
             }
+        }
 
-            100% {
-                transform: scale(1);
-            }
+        .placar {
+            font-family: 'Passion One', sans-serif;
+            font-size: 4.5rem;
+            line-height: 1;
+            color: var(--verde);
+            margin: 10px 0 4px;
+        }
+
+        .placar-legenda {
+            font-weight: 700;
+            color: #455a64;
+            margin: 0 0 16px;
+        }
+
+        .placar-legenda strong {
+            color: var(--azul);
+            font-size: 1.1rem;
+        }
+
+        footer {
+            margin-top: 24px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 700;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 
 <body>
 
+    <header>
+        <img src="turma-logo-web.png" alt="Logo da turma IME XXVII Engenharia">
+        <h1>Fila do Crepe</h1>
+        <p class="subtitulo">🇧🇷 A Copa do Crepe começou! <span class="bola">⚽</span> 🥞</p>
+    </header>
+
     <div class="container" id="loginScreen">
-        <h2>Fila Virtual do Crepe 🥞</h2>
+        <h2>Entre em campo</h2>
         <input type="text" id="name" placeholder="Seu Nome" required>
         <input type="tel" id="phone" placeholder="Seu WhatsApp (apenas números)" required pattern="[0-9]+">
-        <button onclick="joinQueue()">Entrar na Fila</button>
+        <button onclick="joinQueue()">Entrar na Fila ⚽</button>
     </div>
 
     <div class="container hidden" id="queueScreen">
-        <h2>Sua Fila</h2>
-        <div id="alertBox" class="alert hidden">🔥 Vá para a estação de crepe! Sua vez está chegando.</div>
-        <h1>Posição: <span id="positionText">--</span></h1>
-        <p>Pessoas na sua frente: <span id="aheadText">--</span></p>
-        <button onclick="markServed()" style="background: #4caf50;">Fui Atendido ✓</button>
+        <h2>Sua posição no time</h2>
+        <div id="alertBox" class="alert hidden">🚨 VOCÊ FOI CONVOCADO! 🚨<br>Vá para a estação de crepe, sua vez está
+            chegando! 🥞</div>
+        <div class="placar" id="positionText">--</div>
+        <p class="placar-legenda">Pessoas na sua frente: <strong id="aheadText">--</strong></p>
+        <button class="verde" onclick="markServed()">Fui Atendido ✓</button>
     </div>
 
     <div class="container hidden" id="standbyScreen">
-        <h2>Espero que tenha gostado! 😋</h2>
-        <p>Ainda tem fome?</p>
-        <button onclick="rejoinQueue()">Deseja comer mais? Entrar na fila novamente</button>
+        <h2>Golaço! 😋🥅</h2>
+        <p>Espero que tenha gostado! Ainda tem fome?</p>
+        <button onclick="rejoinQueue()">Quero mais! Voltar pra fila 🥞</button>
     </div>
+
+    <footer>IME XXVII Engenharia · Bora pra Copa... do Crepe! 🏆</footer>
 
     <script>
         const socket = io(); // Conecta à mesma origem que serviu a página (funciona local e em produção)
@@ -119,6 +267,17 @@
                 showScreen('loginScreen');
             }
         };
+
+        // Reconexão: reapresenta o telefone ao servidor (necessário para o "Fui Atendido"
+        // continuar autorizado após uma queda de conexão)
+        socket.on('connect', () => {
+            const savedPhone = localStorage.getItem('crepe_phone');
+            const savedName = localStorage.getItem('crepe_name');
+            const naFila = !document.getElementById('queueScreen').classList.contains('hidden');
+            if (savedPhone && savedName && naFila) {
+                socket.emit('join_queue', { name: savedName, phone: savedPhone });
+            }
+        });
 
         function joinQueue() {
             const name = document.getElementById('name').value;
