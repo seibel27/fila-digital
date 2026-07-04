@@ -208,6 +208,62 @@
             font-weight: 700;
             font-size: 0.9rem;
         }
+
+        /* Lista pública da fila (apenas nomes) */
+        #queueListBox {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        #queueListBox h3 {
+            font-family: 'Passion One', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--azul);
+            text-align: center;
+            margin: 6px 0 10px;
+        }
+
+        #queueList {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 45vh;
+            overflow-y: auto;
+        }
+
+        .fila-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 8px;
+            border-bottom: 1px solid #eceff1;
+            font-weight: 700;
+            color: #37474f;
+        }
+
+        .fila-item:last-child {
+            border-bottom: none;
+        }
+
+        .fila-pos {
+            font-family: 'Passion One', sans-serif;
+            font-size: 1.2rem;
+            color: var(--verde);
+            min-width: 34px;
+            text-align: center;
+        }
+
+        .fila-item.voce {
+            background: var(--amarelo);
+            border-radius: 10px;
+            color: var(--azul);
+        }
+
+        .fila-item.voce .fila-pos {
+            color: var(--azul);
+        }
     </style>
 </head>
 
@@ -243,6 +299,11 @@
 
     <footer>IME XXVII Engenharia · Bora pra Copa... do Crepe! 🏆</footer>
 
+    <div class="container hidden" id="queueListBox">
+        <h3>⚽ Escalação da fila</h3>
+        <ol id="queueList"></ol>
+    </div>
+
     <script>
         const socket = io(); // Conecta à mesma origem que serviu a página (funciona local e em produção)
 
@@ -252,7 +313,27 @@
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById(screenId).classList.remove('hidden');
+            // A lista pública da fila só aparece junto com a tela de posição
+            document.getElementById('queueListBox').classList.toggle('hidden', screenId !== 'queueScreen');
         };
+
+        // Renderiza a fila pública (apenas nomes; os telefones já chegam mascarados do servidor)
+        function renderQueueList(queue, myPhone) {
+            const listEl = document.getElementById('queueList');
+            listEl.innerHTML = '';
+            queue.forEach((user, index) => {
+                const li = document.createElement('li');
+                li.className = 'fila-item' + (user.phone === myPhone ? ' voce' : '');
+                const pos = document.createElement('span');
+                pos.className = 'fila-pos';
+                pos.textContent = `${index + 1}º`;
+                const nome = document.createElement('span');
+                // textContent escapa qualquer HTML no nome (proteção XSS)
+                nome.textContent = user.name + (user.phone === myPhone ? ' (você)' : '');
+                li.append(pos, nome);
+                listEl.appendChild(li);
+            });
+        }
 
         // Inicialização
         window.onload = () => {
@@ -311,6 +392,8 @@
             if (!myPhone) return;
 
             const myIndex = queue.findIndex(u => u.phone === myPhone);
+
+            renderQueueList(queue, myPhone);
 
             // Se eu não estou na fila, e a tela de fila está ativa, eu fui removido pelo admin
             if (myIndex === -1 && !document.getElementById('queueScreen').classList.contains('hidden')) {
