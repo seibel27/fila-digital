@@ -96,7 +96,7 @@
     </div>
 
     <script>
-        const socket = io("http://localhost:3000"); // Altere para a URL de produção
+        const socket = io(); // Conecta à mesma origem que serviu a página (funciona local e em produção)
 
         // Gerenciamento de Telas
         const showScreen = (screenId) => {

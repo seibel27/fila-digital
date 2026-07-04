@@ -53,7 +53,7 @@
     </div>
 
     <script>
-        const socket = io("http://localhost:3000"); // Altere para a URL de produção
+        const socket = io(); // Conecta à mesma origem que serviu a página
         const ADMIN_PASSWORD = "crepe"; // Em produção, validar via JWT/Backend
 
         function loginAdmin() {
@@ -66,6 +66,13 @@
             }
         }
 
+        // Escapa caracteres HTML para evitar XSS (o nome vem do usuário!)
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
         socket.on('queue_updated', (queue) => {
             document.getElementById('totalCount').innerText = queue.length;
             const list = document.getElementById('queueList');
@@ -73,13 +80,15 @@
 
             queue.forEach((user, index) => {
                 const isTop3 = index < 3 ? '🔥' : '';
+                const safeName = escapeHtml(user.name);
+                const safePhone = escapeHtml(user.phone);
                 list.innerHTML += `
                 <div class="queue-item">
                     <div>
-                        <strong>${index + 1}º</strong> - ${user.name} ${isTop3}<br>
-                        <small>WhatsApp: ${user.phone}</small>
+                        <strong>${index + 1}º</strong> - ${safeName} ${isTop3}<br>
+                        <small>WhatsApp: ${safePhone}</small>
                     </div>
-                    <button onclick="forceRemove('${user.phone}')">Marcar como Atendido</button>
+                    <button onclick="forceRemove('${safePhone}')">Marcar como Atendido</button>
                 </div>
             `;
             });
